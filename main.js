@@ -1,5 +1,5 @@
-import * as THREE from '../node_modules/three/build/three.module.js';
-import { GUI } from '../node_modules/three/examples/jsm/libs/lil-gui.module.min.js';
+import * as THREE from 'https://threejs.org/build/three.module.js';
+import { GUI } from 'https://threejs.org/examples/jsm/libs/lil-gui.module.min.js';
 
 var camera, scene, renderer, facemesh, material, stats, options;
 var cube = [[100,100,100,100],
