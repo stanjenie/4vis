@@ -1,7 +1,7 @@
 import * as THREE from 'https://threejs.org/build/three.module.js';
 import { GUI } from 'https://threejs.org/examples/jsm/libs/lil-gui.module.min.js';
 
-var camera, scene, renderer, facemesh, material, stats, options;
+var camera, scene, renderer, facemesh, facemeshb, material, stats, options;
 var cube = [[100,100,100,100],
   [100,100,-100,100],
   [100,-100,100,100],
@@ -17,6 +17,7 @@ var simplex = [[Math.sqrt(5)*25,Math.sqrt(5)*25,Math.sqrt(5)*25,-25],
 [0,0,0,100]];
 options = {
   rotation: {xw: 0.25, yw: 0.25, zw: 0.25},
+  cells: {dual: true}
 };
 init();
 animate();
@@ -50,11 +51,20 @@ function init() {
   opacity: 0.5,
   depthTest: false
   });
+  var materialb = new THREE.MeshBasicMaterial({
+  wireframe:true,
+  transparent: true,
+  opacity: 0.5,
+  depthTest: false,
+  color: 0xffff00
+  });
 
 
   var facegeom = new Array(10);
+  var facegeomb = new Array(10);
   for (let i = 0; i < facegeom.length; i++) {
   	facegeom[i] = new THREE.BufferGeometry();
+    facegeomb[i] = new THREE.BufferGeometry();
   }
   const vertices = new Float32Array([
 	-100, -100, 100,
@@ -87,6 +97,7 @@ function init() {
   console.log(indices[5]);
   for (let j = 0; j < indices.length; j++) {
     facegeom[j].setAttribute('position',new THREE.BufferAttribute(new Float32Array(6 * indices.length).fill(0),3));
+    facegeomb[j].setAttribute('position',new THREE.BufferAttribute(new Float32Array(6 * indices.length).fill(0),3));
   	for (let i = 0; i < 3; i++) {
       var [a,b,c] = indices[j];
   		facegeom[j].attributes.position.array[0+i] = simplex[a][i];
@@ -95,22 +106,34 @@ function init() {
     	facegeom[j].attributes.position.array[12+i] = simplex[b][i];
     	facegeom[j].attributes.position.array[6+i] = simplex[c][i];
     	facegeom[j].attributes.position.array[9+i] = simplex[c][i];
+      facegeomb[j].attributes.position.array[0+i] = -simplex[a][i];
+    	facegeomb[j].attributes.position.array[15+i] = -simplex[a][i];
+    	facegeomb[j].attributes.position.array[3+i] = -simplex[b][i];
+    	facegeomb[j].attributes.position.array[12+i] = -simplex[b][i];
+    	facegeomb[j].attributes.position.array[6+i] = -simplex[c][i];
+    	facegeomb[j].attributes.position.array[9+i] = -simplex[c][i];
   	}
  }
-  console.log(facegeom[0].attributes.position.array[0]);
+  console.log(facegeomb[0].attributes.position.array[0]);
   facemesh = new Array(10);
+  facemeshb = new Array(10);
   for (let i = 0; i < 10; i++) {
   	facemesh[i] = new THREE.Mesh(facegeom[i], material);
+    facemeshb[i] = new THREE.Mesh(facegeomb[i], materialb);
   	facemesh[i].frustumCulled = false;
   	facemesh[i].traverse(function(obj) { obj.frustumCulled = false; });
   	// const positionAttribute = geometry.getAttribute( 'position' );
   	scene.add(facemesh[i]);
+    scene.add(facemeshb[i]);
   }
-  const gui = new GUI({closed:true});
+  const gui = new GUI({closeFolders:true});
+  gui.close();
   const rotgui = gui.addFolder('rotation');
   rotgui.add(options.rotation, 'xw', 0.0, 1.0).name('XW');
   rotgui.add(options.rotation, 'yw', 0.0, 1.0).name('YW');
   rotgui.add(options.rotation, 'zw', 0.0, 1.0).name('ZW');
+  const cellgui = gui.addFolder('visibility');
+  cellgui.add(options.cells, 'dual').name('dual');
 
   // Create ambient light and add to scene.
   var light = new THREE.AmbientLight(0x404040); // soft white light
@@ -131,15 +154,19 @@ function init() {
 
 function animate() {
   requestAnimationFrame(animate);
+  facemeshb[0].material.visible = options.cells.dual;
   for (let i = 0; i < facemesh.length; i++) {
   facemesh[i].rotation.x += 0.005;
   facemesh[i].rotation.y += 0.01;
+  facemeshb[i].rotation.x += 0.005;
+  facemeshb[i].rotation.y += 0.01;
   renderer.render(scene, camera);
   //mesh.geometry.attributes.position.array[0] = 200;
   //geometry.attributes.position.array[30] = 200;
   //mesh.geometry.attributes.position.array[33] = 200;
   //mesh.geometry.attributes.position.array[51] = 200;
   facemesh[i].geometry.attributes.position.needsUpdate = true;
+  facemeshb[i].geometry.attributes.position.needsUpdate = true;
   }
   const indices = [
  		[0,1,2],
@@ -162,6 +189,12 @@ function animate() {
     	facemesh[j].geometry.attributes.position.array[12+i] = simplex[b][i];
     	facemesh[j].geometry.attributes.position.array[6+i] = simplex[c][i];
     	facemesh[j].geometry.attributes.position.array[9+i] = simplex[c][i];
+      facemeshb[j].geometry.attributes.position.array[0+i] = -simplex[a][i];
+    	facemeshb[j].geometry.attributes.position.array[15+i] = -simplex[a][i];
+    	facemeshb[j].geometry.attributes.position.array[3+i] = -simplex[b][i];
+    	facemeshb[j].geometry.attributes.position.array[12+i] = -simplex[b][i];
+    	facemeshb[j].geometry.attributes.position.array[6+i] = -simplex[c][i];
+    	facemeshb[j].geometry.attributes.position.array[9+i] = -simplex[c][i];
   	}
  }
  for (let i = 0; i < simplex.length; i++) {
